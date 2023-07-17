@@ -3,7 +3,7 @@ import java.net.*;
 
 public class Client {
     public static String displayMenu() {
-        String menu = "\n\t\tCommands\n-----------------------------------------------\n- deposit <amount> <date_deposited> <receipt_number>\n- CheckStatement <dateFrom> <dateTo>\n- requestLoan <amount> <paymentPeriod_in_months>\n- LoanRequestStatus <loan_application_number>\n- exit";
+        String menu = "\n\t\tCommands\n-----------------------------------------------\n- deposit <amount> <date_deposited> <receipt_number>\n- CheckStatement <dateFrom> <dateTo>\n- requestLoan <amount> <paymentPeriod_in_months>\n- LoanRequestStatus <loan_application_number>\n- exit\n";
         return menu;
     }
 

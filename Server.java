@@ -9,30 +9,32 @@ public class Server {
     public static final String DB_PASSWORD = "";
 
     /* login --edwin */
-    public static ResultSet login(String username, String password) {
+    public static boolean login(String username, String password) {
         try (Connection connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
                 Statement statement = connection.createStatement()) {
             String query = "SELECT * FROM member WHERE username='" + username + "' AND password='" + password + "'";
             ResultSet resultSet = statement.executeQuery(query);
-            return resultSet;
+            return resultSet.next();
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return null;
+        return false;
     }
 
-    public static ResultSet recoverPassword(String memberNumber, String phoneNumber) {
+    public static boolean recoverPassword(String memberNumber, String phoneNumber) {
         try (Connection connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
                 Statement statement = connection.createStatement()) {
             String query = "SELECT * FROM member WHERE member_number='" + memberNumber + "' AND phone_number='"
                     + phoneNumber + "'";
             ResultSet resultSet = statement.executeQuery(query);
-            return resultSet;
+            return resultSet.next();
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return null;
+        return false;
     }
+    /* login ends here */
+    
 
     /* deposit method --Vanessa */
 
@@ -54,7 +56,7 @@ public class Server {
             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
 
             String inputLine;
-            boolean isLoggedIn = false; // Track user login status
+            boolean isLoggedIn = false;
             int member_id = 0;
             double account_balance = 0.0;
             double loan_balance = 0.0;
@@ -64,20 +66,25 @@ public class Server {
                 if (command.length > 1 && command.length < 5) {
                     switch (command[0]) {
                         case "login":
-                            if (!isLoggedIn && login(command[1], command[2]) != null) {
-                                ResultSet resultSet = login(command[1], command[2]);
-                                try {
-                                    if (resultSet.next()) {
+                            if (!isLoggedIn && login(command[1], command[2])) {
+
+                                out.println("Successfully logged in");
+                                isLoggedIn = true;
+
+                                try (Connection connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+                                        Statement statement = connection.createStatement()) {
+                                    String query = "SELECT * FROM member WHERE username='" + command[1]
+                                            + "' AND password='" + command[2] + "'";
+                                    ResultSet resultSet = statement.executeQuery(query);
+                                    while (resultSet.next()) {
                                         member_id = resultSet.getInt("member_number");
                                         account_balance = resultSet.getDouble("account_balance");
                                         loan_balance = resultSet.getDouble("loan_balance");
                                     }
-                                    ;
                                 } catch (SQLException e) {
                                     e.printStackTrace();
                                 }
-                                out.println("Successfully logged in");
-                                isLoggedIn = true;
+
                             } else if (isLoggedIn) {
                                 out.println("You are already logged in.");
                             } else {
@@ -85,10 +92,23 @@ public class Server {
                             }
                             break;
                         case "forgotPassword":
-                            if(!isLoggedIn) {
-                                if (recoverPassword(command[1], command[2]) != null) {
-                                    out.println("Your password is: " + recoverPassword(command[1], command[2])
-                                            + ". Use the login command to login now.");
+                            if (!isLoggedIn) {
+                                if (recoverPassword(command[1], command[2])) {
+                                    try (Connection connection = DriverManager.getConnection(DB_URL, DB_USER,
+                                            DB_PASSWORD);
+                                            Statement statement = connection.createStatement()) {
+                                        String query = "SELECT * FROM member WHERE member_number='" + command[1]
+                                                + "' AND phone_number='" + command[2] + "'";
+                                        ResultSet resultSet = statement.executeQuery(query);
+                                        while (resultSet.next()) {
+                                            String password = resultSet.getString("password");
+                                            out.println("Your password is: " + password
+                                                    + ". Use the login command to login now.");
+                                        }
+                                    } catch (SQLException e) {
+                                        e.printStackTrace();
+                                    }
+
                                 } else {
                                     out.println("No records found. Return after a day");
                                 }
@@ -96,9 +116,10 @@ public class Server {
                                 out.println("You are already logged in.");
                             }
                             break;
+
                         case "deposit":
                             if (isLoggedIn) {
-                                out.println("Processing deposit for member ID: " + member_id);
+                                
                                 /* call the deposit method here */
                             } else {
                                 out.println("You must log in first to perform this operation.");
@@ -106,7 +127,6 @@ public class Server {
                             break;
                         case "CheckStatement":
                             if (isLoggedIn) {
-                                out.println("Checking statement for member ID: " + member_id);
                                 /* call the CheckStatement method here */
                             } else {
                                 out.println("You must log in first to perform this operation.");
@@ -114,7 +134,6 @@ public class Server {
                             break;
                         case "requestLoan":
                             if (isLoggedIn) {
-                                out.println("Processing loan request for member ID: " + member_id);
                                 /* call the requestLoan method here */
                             } else {
                                 out.println("You must log in first to perform this operation.");
@@ -122,7 +141,6 @@ public class Server {
                             break;
                         case "LoanRequestStatus":
                             if (isLoggedIn) {
-                                out.println("Checking loan request status for member ID: " + member_id);
                                 /* call the LoanRequestStatus method here */
                             } else {
                                 out.println("You must log in first to perform this operation.");
