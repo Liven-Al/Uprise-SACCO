@@ -69,7 +69,7 @@ public class Server {
     /* checkStatement --pius */
 
     /* loan request -- allan */
-       public static void requestLoan(int memberID, int amount, int repayment_period) {
+       public static int requestLoan(int memberID, int amount, int repayment_period) {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
@@ -81,10 +81,8 @@ public class Server {
              /* sql to handle loan request-- */
             String sql = "INSERT INTO loan_application(application_no,member_ID, amount, repayment_period) VALUES("
                     + application_no + "," + memberID + "," + amount + "," + repayment_period + ")";
-            statement.executeUpdate(sql);
-            System.out.println("Your loan application has been submitted successfully. Your application nummber is "
-                    + application_no);
-            
+            statement.executeUpdate(sql); 
+           
             resultSet1 = statement
                     .executeQuery("SELECT COUNT(application_no) FROM loan_application WHERE status='pending'");
             int no_of_available_requests = 0;
@@ -106,6 +104,7 @@ public class Server {
         } catch (Exception e) {
             e.printStackTrace();
         }
+          return application_no; 
     }   
      
           public static void loandistributionandapproval(){ 
@@ -130,8 +129,7 @@ public class Server {
                 List<Integer> memberIndices = new ArrayList<>();  
                 Map<Integer, Integer> memberDeposits = new HashMap<>();           
                 List<Integer> repaymentPeriods = new ArrayList<>();
-                List<Double> finalLoanAmounts = new ArrayList<>();
-              //  List<Integer> memberDeposits = new ArrayList<>();
+                List<Double> finalLoanAmounts = new ArrayList<>(); 
                 List<Integer> applicationNos = new ArrayList<>();
                
                
@@ -159,9 +157,7 @@ public class Server {
 
                             member_ID = resultSet4.getInt("member_ID");
                             accountBalance = resultSet4.getInt("account_balance");
-                            
-                           // memberIDs.add(member_ID);
-                           // memberDeposits.add(accountBalance);
+                           
                             memberDeposits.put(member_ID, accountBalance);
                             total_deposits += accountBalance;
                             
@@ -389,7 +385,12 @@ public class Server {
                             break;
                         case "requestLoan":
                             if (isLoggedIn) {
-                                /* call the requestLoan method here */
+                                 int amount = Integer.parseInt(command[1]);
+                                 int payment_period = Integer.parseInt(command[2]);
+                                
+                                application_no = requestLoan(member_id, amount, payment_period);
+                                out.println("Loan Request received successfully" +"," +"Application number: "+application_no);
+                            
                             } else {
                                 out.println("You must log in first to perform this operation.");
                             }
